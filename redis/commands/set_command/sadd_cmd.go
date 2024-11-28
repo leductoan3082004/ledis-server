@@ -21,7 +21,7 @@ func (cmd *saddCmd) CommandName() string {
 
 // Execute RPUSH key value1 value2, ...
 func (cmd *saddCmd) Execute(args ...string) (any, error) {
-	if len(args) <= 2 {
+	if len(args) < 2 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
 
