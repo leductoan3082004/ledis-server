@@ -5,23 +5,24 @@ import (
 	"ledis-server/redis"
 	"ledis-server/redis/types"
 	"ledis-server/utils"
+	"strconv"
 )
 
-type llenCmd struct {
+type lrangeCmd struct {
 	rds redis.Redis
 }
 
-func NewLLenCmd(rds redis.Redis) redis.ICommandHandler {
-	return &llenCmd{rds: rds}
+func NewLRangeCmd(rds redis.Redis) redis.ICommandHandler {
+	return &lrangeCmd{rds: rds}
 }
 
-func (cmd *llenCmd) CommandName() string {
-	return "LLEN"
+func (cmd *lrangeCmd) CommandName() string {
+	return "LRANGE"
 }
 
 // Execute LLEN key
-func (cmd *llenCmd) Execute(args ...string) (any, error) {
-	if len(args) != 1 {
+func (cmd *lrangeCmd) Execute(args ...string) (any, error) {
+	if len(args) != 3 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
 
@@ -39,6 +40,15 @@ func (cmd *llenCmd) Execute(args ...string) (any, error) {
 	cmd.rds.RLock()
 	defer cmd.rds.RUnlock()
 
+	start, err := strconv.Atoi(args[1])
+	if err != nil {
+		return nil, err
+	}
+	end, err := strconv.Atoi(args[2])
+	if err != nil {
+		return nil, err
+	}
+
 	l := v.(*types.ListType)
-	return l.LLen(), nil
+	return l.LRange(start, end), nil
 }

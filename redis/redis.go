@@ -117,7 +117,7 @@ func (s *redis) TTL(key string) (int, error) {
 	if !exists {
 		return -1, nil
 	}
-	return int(ttl), nil
+	return int(ttl / 1e9), nil
 }
 
 func (s *redis) expired(key string) bool {
@@ -140,7 +140,6 @@ func (s *redis) delete(key string) {
 }
 
 func (s *redis) getOrExpired(key string) (Item, bool) {
-
 	value, exist := s.data[key]
 	if !exist {
 		return nil, false

@@ -5,3 +5,9 @@ const (
 	ListType
 	SetType
 )
+
+var TypeToString = []string{
+	"StringType",
+	"ListType",
+	"SetType",
+}

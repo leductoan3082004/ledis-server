@@ -25,7 +25,7 @@ func (cmd *getCmd) Execute(args ...string) (any, error) {
 	item, exist := cmd.rds.GetOrExpired(args[0])
 
 	if !exist {
-		return nil, utils.ErrKeyDoesNotExist(args[0])
+		return nil, nil
 	}
 
 	cmd.rds.RLock()

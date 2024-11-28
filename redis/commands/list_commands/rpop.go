@@ -7,20 +7,20 @@ import (
 	"ledis-server/utils"
 )
 
-type llenCmd struct {
+type rpopCmd struct {
 	rds redis.Redis
 }
 
-func NewLLenCmd(rds redis.Redis) redis.ICommandHandler {
-	return &llenCmd{rds: rds}
+func NewRPopCmd(rds redis.Redis) redis.ICommandHandler {
+	return &rpopCmd{rds: rds}
 }
 
-func (cmd *llenCmd) CommandName() string {
-	return "LLEN"
+func (cmd *rpopCmd) CommandName() string {
+	return "RPOP"
 }
 
 // Execute LLEN key
-func (cmd *llenCmd) Execute(args ...string) (any, error) {
+func (cmd *rpopCmd) Execute(args ...string) (any, error) {
 	if len(args) != 1 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
@@ -36,9 +36,13 @@ func (cmd *llenCmd) Execute(args ...string) (any, error) {
 		return nil, fmt.Errorf("type mismatch, this key is not a list, it is a %s", utils.TypeToString[v.Type()])
 	}
 
-	cmd.rds.RLock()
-	defer cmd.rds.RUnlock()
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 
 	l := v.(*types.ListType)
-	return l.LLen(), nil
+	res := l.RPop()
+	if res != nil {
+		return *res, nil
+	}
+	return res, nil
 }
