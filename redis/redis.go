@@ -88,6 +88,14 @@ func (s *redis) Keys() []string {
 	return keys
 }
 
+func (s *redis) FlushDB() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.data = make(map[string]Item)
+	s.expirationKey = make(map[string]time.Time)
+}
+
 func (s *redis) expired(key string) bool {
 	return s.hasTTLSet(key) && s.keyHasExpired(key)
 }

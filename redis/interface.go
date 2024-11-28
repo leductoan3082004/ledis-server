@@ -27,6 +27,8 @@ type Redis interface {
 
 	// Keys return list of keys available (not expired or do not have ttl set)
 	Keys() []string
+
+	FlushDB()
 }
 
 type ICommandHandler interface {
