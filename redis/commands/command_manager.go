@@ -3,38 +3,45 @@ package commands
 import (
 	"ledis-server/logging"
 	"ledis-server/redis"
+	"ledis-server/redis/commands/common_commands"
 	"ledis-server/redis/commands/list_commands"
 	"ledis-server/redis/commands/string_commands"
 	"ledis-server/utils"
 )
 
 type commandManager struct {
-	commandMapper map[string]ICommandHandler
-	rds           redis.Redis
+	commandHandlerMapper map[string]redis.ICommandHandler
+	rds                  redis.Redis
 }
 
-func NewCommandManager(rds redis.Redis) ICommandManager {
+func NewCommandManager(rds redis.Redis) redis.ICommandManager {
 	commandManager := &commandManager{
-		commandMapper: make(map[string]ICommandHandler),
+		commandHandlerMapper: make(map[string]redis.ICommandHandler),
 	}
-	commandManager.
-		Register(string_commands.NewGetCmd(rds)).
-		Register(string_commands.NewSetCmd(rds))
+	createCommand := func(newFunc func(redis.Redis) redis.ICommandHandler) redis.ICommandHandler {
+		return newFunc(rds)
+	}
 
-	commandManager.Register(list_commands.NewLLenCmd(rds))
+	commandManager.
+		Register(createCommand(string_commands.NewGetCmd)).
+		Register(createCommand(string_commands.NewSetCmd)).
+		Register(createCommand(list_commands.NewLLenCmd)).
+		Register(createCommand(common_commands.NewDelCmd)).
+		Register(createCommand(common_commands.NewKeysCmd))
+
 	return commandManager
 }
 
-func (cm *commandManager) Register(handler ICommandHandler) ICommandManager {
-	if _, ok := cm.commandMapper[handler.CommandName()]; ok {
+func (cm *commandManager) Register(handler redis.ICommandHandler) redis.ICommandManager {
+	if _, ok := cm.commandHandlerMapper[handler.CommandName()]; ok {
 		logging.GetLogger().Fatalln(utils.ErrCommandRegisteredDuplicate(handler.CommandName()))
 	}
-	cm.commandMapper[handler.CommandName()] = handler
+	cm.commandHandlerMapper[handler.CommandName()] = handler
 	return cm
 }
 
 func (cm *commandManager) Execute(command string, args ...string) (any, error) {
-	handler, ok := cm.commandMapper[command]
+	handler, ok := cm.commandHandlerMapper[command]
 	if !ok {
 		return nil, utils.ErrCommandDoesNotExist
 	}

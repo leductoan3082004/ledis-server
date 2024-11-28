@@ -48,7 +48,7 @@ func (s *redis) Get(key string) (Item, bool) {
 	return value, exist
 }
 
-func (s *redis) GetAndExpired(key string) (Item, bool) {
+func (s *redis) GetOrExpired(key string) (Item, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	value, exist := s.data[key]
@@ -56,14 +56,39 @@ func (s *redis) GetAndExpired(key string) (Item, bool) {
 		return nil, false
 	}
 
-	if s.Expired(key) {
+	if s.expired(key) {
 		s.delete(key)
 		return nil, false
 	}
 	return value, true
 }
 
+func (s *redis) Delete(key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.delete(key)
+}
+
 func (s *redis) Expired(key string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.expired(key)
+}
+
+func (s *redis) Keys() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	keys := make([]string, 0, len(s.data))
+	for k := range s.data {
+		if !s.expired(k) {
+			keys = append(keys, k)
+		}
+	}
+	return keys
+}
+
+func (s *redis) expired(key string) bool {
 	return s.hasTTLSet(key) && s.keyHasExpired(key)
 }
 

@@ -2,7 +2,6 @@ package string_commands
 
 import (
 	"ledis-server/redis"
-	"ledis-server/redis/commands"
 	"ledis-server/redis/types"
 	"ledis-server/utils"
 )
@@ -11,7 +10,7 @@ type setCmd struct {
 	rds redis.Redis
 }
 
-func NewSetCmd(rds redis.Redis) commands.ICommandHandler {
+func NewSetCmd(rds redis.Redis) redis.ICommandHandler {
 	return &setCmd{rds: rds}
 }
 

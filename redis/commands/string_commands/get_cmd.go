@@ -2,7 +2,6 @@ package string_commands
 
 import (
 	"ledis-server/redis"
-	"ledis-server/redis/commands"
 	"ledis-server/utils"
 )
 
@@ -10,7 +9,7 @@ type getCmd struct {
 	rds redis.Redis
 }
 
-func NewGetCmd(rds redis.Redis) commands.ICommandHandler {
+func NewGetCmd(rds redis.Redis) redis.ICommandHandler {
 	return &getCmd{rds: rds}
 }
 
@@ -23,7 +22,7 @@ func (cmd *getCmd) Execute(args ...string) (any, error) {
 	if len(args) != 1 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
-	item, exist := cmd.rds.Get(args[0])
+	item, exist := cmd.rds.GetOrExpired(args[0])
 
 	if !exist {
 		return nil, utils.ErrKeyDoesNotExist(args[0])

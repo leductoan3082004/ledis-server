@@ -11,7 +11,7 @@ func main() {
 	rds := redis.NewRedis()
 	commandManager := commands.NewCommandManager(rds)
 
-	if err := httphandler.StartHTTPHandler(); err != nil {
+	if err := httphandler.StartHTTPHandler(commandManager); err != nil {
 		logging.GetLogger().Fatalln(err)
 	}
 }

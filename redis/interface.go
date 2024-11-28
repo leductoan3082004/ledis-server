@@ -17,9 +17,24 @@ type Redis interface {
 	// Get just get but not check expiration
 	Get(key string) (Item, bool)
 
+	Delete(key string)
+
 	// Expired check if key has expired or not
 	Expired(key string) bool
 
-	// GetAndExpired lazy key expiration when get it
-	GetAndExpired(key string) (Item, bool)
+	// GetOrExpired  lazy key expiration when get it
+	GetOrExpired(key string) (Item, bool)
+
+	// Keys return list of keys available (not expired or do not have ttl set)
+	Keys() []string
+}
+
+type ICommandHandler interface {
+	CommandName() string
+	Execute(args ...string) (any, error)
+}
+
+type ICommandManager interface {
+	Register(handler ICommandHandler) ICommandManager
+	Execute(command string, args ...string) (any, error)
 }
