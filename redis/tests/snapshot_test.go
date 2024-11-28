@@ -58,3 +58,26 @@ func TestListPushRetrieve(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, beforeRestoreList, afterRestoreList)
 }
+
+func TestSetRetrieve(t *testing.T) {
+	cm := initDB()
+	defer os.Remove("snapshot.rdb")
+	resp, err := cm.Execute("SADD", "key1", "value1", "value2", "value3", "value3")
+	assert.NoError(t, err)
+	assert.Equal(t, 3, resp)
+
+	_, err = cm.Execute("SNAPSHOT")
+	assert.NoError(t, err)
+
+	_, err = cm.Execute("RESTORE")
+	assert.NoError(t, err)
+
+	afterCount, err := cm.Execute("SCARD", "key1")
+	assert.NoError(t, err)
+	assert.Equal(t, 3, afterCount)
+
+	afterRestoreSet, err := cm.Execute("SMEMBERS", "key1")
+	assert.NoError(t, err)
+
+	assert.ElementsMatch(t, []string{"value1", "value2", "value3"}, afterRestoreSet)
+}
