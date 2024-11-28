@@ -7,7 +7,7 @@ import (
 )
 
 func TestType(t *testing.T) {
-	l := NewListType().(*listType)
+	l := NewListType().(*ListType)
 	got := l.Type()
 	expected := utils.ListType
 
@@ -19,26 +19,26 @@ func TestType(t *testing.T) {
 func TestLLen(t *testing.T) {
 	tests := []struct {
 		name     string
-		actions  func(l *listType)
+		actions  func(l *ListType)
 		expected int
 	}{
 		{
 			name: "empty list",
-			actions: func(l *listType) {
+			actions: func(l *ListType) {
 				// no action
 			},
 			expected: 0,
 		},
 		{
 			name: "push three elements",
-			actions: func(l *listType) {
+			actions: func(l *ListType) {
 				l.RPush([]*string{ptr("a"), ptr("b"), ptr("c")}...)
 			},
 			expected: 3,
 		},
 		{
 			name: "push and pop elements",
-			actions: func(l *listType) {
+			actions: func(l *ListType) {
 				l.RPush([]*string{ptr("a"), ptr("b"), ptr("c")}...)
 				l.LPop()
 			},
@@ -47,28 +47,30 @@ func TestLLen(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			l := NewListType().(*listType)
-			tt.actions(l)
-			got := l.LLen()
-			if got != tt.expected {
-				t.Errorf("expected %v, got %v", tt.expected, got)
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				l := NewListType().(*ListType)
+				tt.actions(l)
+				got := l.LLen()
+				if got != tt.expected {
+					t.Errorf("expected %v, got %v", tt.expected, got)
+				}
+			},
+		)
 	}
 }
 
 func TestLPop(t *testing.T) {
 	tests := []struct {
 		name      string
-		setup     func(l *listType)
+		setup     func(l *ListType)
 		numToPop  int
 		expected  []*string
 		remaining []string
 	}{
 		{
 			name: "Pop one value from non-empty list",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c")}
 				l.LPush(values...)
 			},
@@ -78,7 +80,7 @@ func TestLPop(t *testing.T) {
 		},
 		{
 			name: "Pop multiple values",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("1"), ptr("2"), ptr("3")}
 				l.LPush(values...)
 			},
@@ -88,7 +90,7 @@ func TestLPop(t *testing.T) {
 		},
 		{
 			name: "Pop all values",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("x"), ptr("y")}
 				l.LPush(values...)
 			},
@@ -98,7 +100,7 @@ func TestLPop(t *testing.T) {
 		},
 		{
 			name: "Pop from empty list",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				// No values added
 			},
 			numToPop:  1,
@@ -108,38 +110,40 @@ func TestLPop(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			l := NewListType().(*listType)
-			tt.setup(l)
+		t.Run(
+			tt.name, func(t *testing.T) {
+				l := NewListType().(*ListType)
+				tt.setup(l)
 
-			var got []*string
-			for i := 0; i < tt.numToPop; i++ {
-				got = append(got, l.LPop())
-			}
+				var got []*string
+				for i := 0; i < tt.numToPop; i++ {
+					got = append(got, l.LPop())
+				}
 
-			if !equalSlicePtrs(got, tt.expected) {
-				t.Errorf("expected %v, got %v", tt.expected, got)
-			}
+				if !equalSlicePtrs(got, tt.expected) {
+					t.Errorf("expected %v, got %v", tt.expected, got)
+				}
 
-			remaining := l.LRange(0, l.LLen()-1)
-			if !reflect.DeepEqual(remaining, tt.remaining) {
-				t.Errorf("remaining elements = %v; want %v", remaining, tt.remaining)
-			}
-		})
+				remaining := l.LRange(0, l.LLen()-1)
+				if !reflect.DeepEqual(remaining, tt.remaining) {
+					t.Errorf("remaining elements = %v; want %v", remaining, tt.remaining)
+				}
+			},
+		)
 	}
 }
 
 func TestRPop(t *testing.T) {
 	tests := []struct {
 		name      string
-		setup     func(l *listType)
+		setup     func(l *ListType)
 		numToPop  int
 		expected  []*string
 		remaining []string
 	}{
 		{
 			name: "Pop one value from non-empty list",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c")}
 				l.RPush(values...)
 			},
@@ -149,7 +153,7 @@ func TestRPop(t *testing.T) {
 		},
 		{
 			name: "Pop multiple values",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("1"), ptr("2"), ptr("3")}
 				l.RPush(values...)
 			},
@@ -159,7 +163,7 @@ func TestRPop(t *testing.T) {
 		},
 		{
 			name: "Pop all values",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("x"), ptr("y")}
 				l.RPush(values...)
 			},
@@ -169,7 +173,7 @@ func TestRPop(t *testing.T) {
 		},
 		{
 			name: "Pop from empty list",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				// No values added
 			},
 			numToPop:  1,
@@ -179,24 +183,26 @@ func TestRPop(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			l := NewListType().(*listType)
-			tt.setup(l)
+		t.Run(
+			tt.name, func(t *testing.T) {
+				l := NewListType().(*ListType)
+				tt.setup(l)
 
-			var got []*string
-			for i := 0; i < tt.numToPop; i++ {
-				got = append(got, l.RPop())
-			}
+				var got []*string
+				for i := 0; i < tt.numToPop; i++ {
+					got = append(got, l.RPop())
+				}
 
-			if !equalSlicePtrs(got, tt.expected) {
-				t.Errorf("expected %v, got %v", tt.expected, got)
-			}
+				if !equalSlicePtrs(got, tt.expected) {
+					t.Errorf("expected %v, got %v", tt.expected, got)
+				}
 
-			remaining := l.LRange(0, l.LLen()-1)
-			if !reflect.DeepEqual(remaining, tt.remaining) {
-				t.Errorf("remaining elements = %v; want %v", remaining, tt.remaining)
-			}
-		})
+				remaining := l.LRange(0, l.LLen()-1)
+				if !reflect.DeepEqual(remaining, tt.remaining) {
+					t.Errorf("remaining elements = %v; want %v", remaining, tt.remaining)
+				}
+			},
+		)
 	}
 }
 
@@ -292,27 +298,31 @@ func TestGetPositiveIndex(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			start, end := utils.GetPositiveStartEndIndexes(tt.start, tt.end, tt.length)
-			if start != tt.expectedStart || end != tt.expectedEnd {
-				t.Errorf("GetPositiveStartEndIndexes(%d, %d, %d) = (%d, %d); want (%d, %d)",
-					tt.start, tt.end, tt.length, start, end, tt.expectedStart, tt.expectedEnd)
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				start, end := utils.GetPositiveStartEndIndexes(tt.start, tt.end, tt.length)
+				if start != tt.expectedStart || end != tt.expectedEnd {
+					t.Errorf(
+						"GetPositiveStartEndIndexes(%d, %d, %d) = (%d, %d); want (%d, %d)",
+						tt.start, tt.end, tt.length, start, end, tt.expectedStart, tt.expectedEnd,
+					)
+				}
+			},
+		)
 	}
 }
 
 func TestLRange(t *testing.T) {
 	tests := []struct {
 		name     string
-		setup    func(l *listType)
+		setup    func(l *ListType)
 		start    int
 		end      int
 		expected []string
 	}{
 		{
 			name: "Normal range",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c"), ptr("d"), ptr("e")}
 				l.RPush(values...)
 			},
@@ -322,7 +332,7 @@ func TestLRange(t *testing.T) {
 		},
 		{
 			name: "Full range",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c"), ptr("d"), ptr("e")}
 				l.RPush(values...)
 			},
@@ -332,7 +342,7 @@ func TestLRange(t *testing.T) {
 		},
 		{
 			name: "Out-of-bounds range",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c")}
 				l.RPush(values...)
 			},
@@ -342,7 +352,7 @@ func TestLRange(t *testing.T) {
 		},
 		{
 			name: "Negative indices",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c"), ptr("d"), ptr("e")}
 				l.RPush(values...)
 			},
@@ -352,7 +362,7 @@ func TestLRange(t *testing.T) {
 		},
 		{
 			name: "Empty range",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c")}
 				l.RPush(values...)
 			},
@@ -362,7 +372,7 @@ func TestLRange(t *testing.T) {
 		},
 		{
 			name: "Empty list",
-			setup: func(l *listType) {
+			setup: func(l *ListType) {
 				// No values added
 			},
 			start:    0,
@@ -372,15 +382,17 @@ func TestLRange(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			l := NewListType().(*listType)
-			tt.setup(l)
-			got := l.LRange(tt.start, tt.end)
+		t.Run(
+			tt.name, func(t *testing.T) {
+				l := NewListType().(*ListType)
+				tt.setup(l)
+				got := l.LRange(tt.start, tt.end)
 
-			if !reflect.DeepEqual(got, tt.expected) {
-				t.Errorf("LRange(%d, %d) = %v; want %v", tt.start, tt.end, got, tt.expected)
-			}
-		})
+				if !reflect.DeepEqual(got, tt.expected) {
+					t.Errorf("LRange(%d, %d) = %v; want %v", tt.start, tt.end, got, tt.expected)
+				}
+			},
+		)
 	}
 }
 

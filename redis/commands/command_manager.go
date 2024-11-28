@@ -2,17 +2,27 @@ package commands
 
 import (
 	"ledis-server/logging"
+	"ledis-server/redis"
+	"ledis-server/redis/commands/list_commands"
+	"ledis-server/redis/commands/string_commands"
 	"ledis-server/utils"
 )
 
 type commandManager struct {
 	commandMapper map[string]ICommandHandler
+	rds           redis.Redis
 }
 
-func NewCommandManager() ICommandManager {
-	return &commandManager{
+func NewCommandManager(rds redis.Redis) ICommandManager {
+	commandManager := &commandManager{
 		commandMapper: make(map[string]ICommandHandler),
 	}
+	commandManager.
+		Register(string_commands.NewGetCmd(rds)).
+		Register(string_commands.NewSetCmd(rds))
+
+	commandManager.Register(list_commands.NewLLenCmd(rds))
+	return commandManager
 }
 
 func (cm *commandManager) Register(handler ICommandHandler) ICommandManager {

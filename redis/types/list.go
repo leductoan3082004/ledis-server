@@ -6,58 +6,54 @@ import (
 	"ledis-server/utils"
 )
 
-type listType struct {
+type ListType struct {
 	list *list.List
 }
 
 func NewListType() redis.Item {
-	return &listType{
+	return &ListType{
 		list: list.New(),
 	}
 }
 
-func (s *listType) Value() any {
+func (s *ListType) Value() any {
 	return s.list
 }
 
-func (s *listType) Type() int {
+func (s *ListType) Type() int {
 	return utils.ListType
 }
 
-func (s *listType) LLen() int {
+func (s *ListType) LLen() int {
 	return s.list.Len()
 }
 
-func (s *listType) LPush(values ...*string) int {
+func (s *ListType) LPush(values ...*string) int {
 	for _, v := range values {
 		s.list.PushFront(*v)
 	}
 	return s.LLen()
 }
 
-func (s *listType) RPush(values ...*string) int {
+func (s *ListType) RPush(values ...*string) int {
 	for _, v := range values {
 		s.list.PushBack(*v)
 	}
 	return s.LLen()
 }
 
-func toString(value *list.Element) *string {
-	v := value.Value.(string)
-	return &v
-}
-func (s *listType) LPop() *string {
+func (s *ListType) LPop() *string {
 	if value := s.list.Front(); value != nil {
 		s.list.Remove(value)
-		return toString(value)
+		return utils.PtrToValue[string](value)
 	}
 	return nil
 }
 
-func (s *listType) RPop() *string {
+func (s *ListType) RPop() *string {
 	if value := s.list.Back(); value != nil {
 		s.list.Remove(value)
-		return toString(value)
+		return utils.PtrToValue[string](value)
 	}
 	return nil
 }
@@ -77,23 +73,23 @@ func atIndex(index int, list *list.List) *list.Element {
 	return e
 }
 
-func (l *listType) LRange(start int, end int) []string {
+func (s *ListType) LRange(start int, end int) []string {
 	values := make([]string, 0)
-	from, to := utils.GetPositiveStartEndIndexes(start, end, l.LLen())
+	from, to := utils.GetPositiveStartEndIndexes(start, end, s.LLen())
 
 	if from > to {
 		return values
 	}
 
-	e := atIndex(from, l.list)
+	e := atIndex(from, s.list)
 	if e == nil {
 		return values
 	}
 
-	values = append(values, *toString(e))
+	values = append(values, *utils.PtrToValue[string](e))
 	for i := from; i < to; i++ {
 		e = e.Next()
-		values = append(values, *toString(e))
+		values = append(values, *utils.PtrToValue[string](e))
 	}
 	return values
 }
