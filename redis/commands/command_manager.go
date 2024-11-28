@@ -5,6 +5,7 @@ import (
 	"ledis-server/redis"
 	"ledis-server/redis/commands/common_commands"
 	"ledis-server/redis/commands/list_commands"
+	"ledis-server/redis/commands/set_command"
 	"ledis-server/redis/commands/string_commands"
 	"ledis-server/utils"
 )
@@ -34,7 +35,12 @@ func NewCommandManager(rds redis.Redis) redis.ICommandManager {
 		Register(createCommand(common_commands.NewKeysCmd)).
 		Register(createCommand(common_commands.NewFlushDBCmd)).
 		Register(createCommand(common_commands.NewExpireCmd)).
-		Register(createCommand(common_commands.NewTTLCmd))
+		Register(createCommand(common_commands.NewTTLCmd)).
+		Register(createCommand(set_command.NewSAddCmd)).
+		Register(createCommand(set_command.NewSCardCmd)).
+		Register(createCommand(set_command.NewSRemCmd)).
+		Register(createCommand(set_command.NewSMemberCmd)).
+		Register(createCommand(set_command.NewSInterCmd))
 
 	return commandManager
 }

@@ -120,6 +120,21 @@ func (s *redis) TTL(key string) (int, error) {
 	return int(ttl / 1e9), nil
 }
 
+func (s *redis) Gets(keys ...string) []Item {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	items := make([]Item, 0, len(keys))
+	for _, key := range keys {
+		item, exists := s.getOrExpired(key)
+		if exists {
+			items = append(items, item)
+		}
+	}
+
+	return items
+}
+
 func (s *redis) expired(key string) bool {
 	return s.hasTTLSet(key) && s.keyHasExpired(key)
 }
