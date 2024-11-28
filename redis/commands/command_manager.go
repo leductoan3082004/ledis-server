@@ -28,7 +28,9 @@ func NewCommandManager(rds redis.Redis) redis.ICommandManager {
 		Register(createCommand(list_commands.NewLLenCmd)).
 		Register(createCommand(common_commands.NewDelCmd)).
 		Register(createCommand(common_commands.NewKeysCmd)).
-		Register(createCommand(common_commands.NewFlushDBCmd))
+		Register(createCommand(common_commands.NewFlushDBCmd)).
+		Register(createCommand(common_commands.NewExpireCmd)).
+		Register(createCommand(common_commands.NewTTLCmd))
 
 	return commandManager
 }

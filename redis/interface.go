@@ -29,6 +29,9 @@ type Redis interface {
 	Keys() []string
 
 	FlushDB()
+
+	Expire(key string, ttlInSeconds int) error
+	TTL(key string) (int, error)
 }
 
 type ICommandHandler interface {

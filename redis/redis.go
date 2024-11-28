@@ -2,12 +2,14 @@ package redis
 
 import (
 	"github.com/sasha-s/go-deadlock"
+	"ledis-server/utils"
 	"time"
 )
 
 type redis struct {
 	data          map[string]Item
 	expirationKey map[string]time.Time
+	ttl           map[string]time.Duration
 	mu            *deadlock.RWMutex
 }
 
@@ -15,6 +17,7 @@ func NewRedis() *redis {
 	return &redis{
 		data:          make(map[string]Item),
 		expirationKey: make(map[string]time.Time),
+		ttl:           make(map[string]time.Duration),
 		mu:            new(deadlock.RWMutex),
 	}
 }
@@ -51,16 +54,7 @@ func (s *redis) Get(key string) (Item, bool) {
 func (s *redis) GetOrExpired(key string) (Item, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	value, exist := s.data[key]
-	if !exist {
-		return nil, false
-	}
-
-	if s.expired(key) {
-		s.delete(key)
-		return nil, false
-	}
-	return value, true
+	return s.getOrExpired(key)
 }
 
 func (s *redis) Delete(key string) {
@@ -94,6 +88,36 @@ func (s *redis) FlushDB() {
 
 	s.data = make(map[string]Item)
 	s.expirationKey = make(map[string]time.Time)
+	s.ttl = make(map[string]time.Duration)
+}
+
+func (s *redis) Expire(key string, ttlInSeconds int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if item, exist := s.getOrExpired(key); !exist || item == nil {
+		return utils.ErrKeyDoesNotExist(key)
+	}
+
+	ttl := time.Duration(ttlInSeconds) * time.Second
+	s.expirationKey[key] = time.Now().Add(ttl)
+	s.ttl[key] = ttl
+
+	return nil
+}
+
+func (s *redis) TTL(key string) (int, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if item, exist := s.getOrExpired(key); !exist || item == nil {
+		return -1, utils.ErrKeyDoesNotExist(key)
+	}
+
+	ttl, exists := s.ttl[key]
+	if !exists {
+		return -1, nil
+	}
+	return int(ttl), nil
 }
 
 func (s *redis) expired(key string) bool {
@@ -112,4 +136,19 @@ func (s *redis) keyHasExpired(key string) bool {
 func (s *redis) delete(key string) {
 	delete(s.data, key)
 	delete(s.expirationKey, key)
+	delete(s.ttl, key)
+}
+
+func (s *redis) getOrExpired(key string) (Item, bool) {
+
+	value, exist := s.data[key]
+	if !exist {
+		return nil, false
+	}
+
+	if s.expired(key) {
+		s.delete(key)
+		return nil, false
+	}
+	return value, true
 }
