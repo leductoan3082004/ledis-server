@@ -1,8 +1,10 @@
 package redis
 
 import (
+	"encoding/gob"
 	"github.com/sasha-s/go-deadlock"
 	"ledis-server/utils"
+	"os"
 	"time"
 )
 
@@ -133,6 +135,75 @@ func (s *redis) Gets(keys ...string) []Item {
 	}
 
 	return items
+}
+
+func (s *redis) MakeSnapshot() error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	tempFileName := "snapshot_temp.rdb"
+	finalFileName := "snapshot.rdb"
+
+	snapshot := struct {
+		Data          map[string]Item
+		ExpirationKey map[string]time.Time
+		TTL           map[string]time.Duration
+	}{
+		Data:          s.data,
+		ExpirationKey: s.expirationKey,
+		TTL:           s.ttl,
+	}
+
+	file, err := os.Create(tempFileName)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		file.Close()
+		if err != nil {
+			os.Remove(tempFileName)
+		}
+	}()
+
+	encoder := gob.NewEncoder(file)
+	if err = encoder.Encode(snapshot); err != nil {
+		return err
+	}
+
+	if err = os.Rename(tempFileName, finalFileName); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *redis) LoadSnapshot() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	file, err := os.Open("snapshot.rdb")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	snapshot := struct {
+		Data          map[string]Item
+		ExpirationKey map[string]time.Time
+		TTL           map[string]time.Duration
+	}{}
+
+	decoder := gob.NewDecoder(file)
+	err = decoder.Decode(&snapshot)
+	if err != nil {
+		return err
+	}
+
+	s.data = snapshot.Data
+	s.expirationKey = snapshot.ExpirationKey
+	s.ttl = snapshot.TTL
+
+	return nil
 }
 
 func (s *redis) expired(key string) bool {

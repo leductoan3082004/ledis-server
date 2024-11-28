@@ -1,23 +1,57 @@
 package types
 
 import (
+	"bytes"
 	"container/list"
+	"encoding/gob"
 	"ledis-server/redis"
 	"ledis-server/utils"
 )
 
 type ListType struct {
-	list *list.List
+	List *list.List
 }
 
 func NewListType() redis.Item {
 	return &ListType{
-		list: list.New(),
+		List: list.New(),
 	}
 }
 
+func (l *ListType) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+
+	var items []any
+	for e := l.List.Front(); e != nil; e = e.Next() {
+		items = append(items, e.Value)
+	}
+
+	if err := encoder.Encode(items); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (l *ListType) GobDecode(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	decoder := gob.NewDecoder(buf)
+
+	var items []any
+	if err := decoder.Decode(&items); err != nil {
+		return err
+	}
+
+	l.List = list.New()
+	for _, item := range items {
+		l.List.PushBack(item)
+	}
+	return nil
+}
+
 func (s *ListType) Value() any {
-	return s.list
+	return s.List
 }
 
 func (s *ListType) Type() int {
@@ -25,34 +59,34 @@ func (s *ListType) Type() int {
 }
 
 func (s *ListType) LLen() int {
-	return s.list.Len()
+	return s.List.Len()
 }
 
 func (s *ListType) LPush(values ...*string) int {
 	for _, v := range values {
-		s.list.PushFront(*v)
+		s.List.PushFront(*v)
 	}
 	return s.LLen()
 }
 
 func (s *ListType) RPush(values ...*string) int {
 	for _, v := range values {
-		s.list.PushBack(*v)
+		s.List.PushBack(*v)
 	}
 	return s.LLen()
 }
 
 func (s *ListType) LPop() *string {
-	if value := s.list.Front(); value != nil {
-		s.list.Remove(value)
+	if value := s.List.Front(); value != nil {
+		s.List.Remove(value)
 		return utils.PtrToValue[string](value)
 	}
 	return nil
 }
 
 func (s *ListType) RPop() *string {
-	if value := s.list.Back(); value != nil {
-		s.list.Remove(value)
+	if value := s.List.Back(); value != nil {
+		s.List.Remove(value)
 		return utils.PtrToValue[string](value)
 	}
 	return nil
@@ -81,7 +115,7 @@ func (s *ListType) LRange(start int, end int) []string {
 		return values
 	}
 
-	e := atIndex(from, s.list)
+	e := atIndex(from, s.List)
 	if e == nil {
 		return values
 	}

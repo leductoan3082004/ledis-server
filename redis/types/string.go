@@ -5,20 +5,20 @@ import (
 	"ledis-server/utils"
 )
 
-type stringType struct {
-	value *string
+type StringType struct {
+	Val *string
 }
 
 func NewStringType(val string) redis.Item {
-	return &stringType{
-		value: &val,
+	return &StringType{
+		Val: &val,
 	}
 }
 
-func (s *stringType) Value() any {
-	return s.value
+func (s *StringType) Value() any {
+	return s.Val
 }
 
-func (s *stringType) Type() int {
+func (s *StringType) Type() int {
 	return utils.StringType
 }

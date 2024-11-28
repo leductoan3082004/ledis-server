@@ -33,6 +33,9 @@ type Redis interface {
 	Expire(key string, ttlInSeconds int) error
 	TTL(key string) (int, error)
 	Gets(keys ...string) []Item
+
+	LoadSnapshot() error
+	MakeSnapshot() error
 }
 
 type ICommandHandler interface {

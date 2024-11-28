@@ -23,7 +23,7 @@ func TestLLen(t *testing.T) {
 		expected int
 	}{
 		{
-			name: "empty list",
+			name: "empty List",
 			actions: func(l *ListType) {
 				// no action
 			},
@@ -69,7 +69,7 @@ func TestLPop(t *testing.T) {
 		remaining []string
 	}{
 		{
-			name: "Pop one value from non-empty list",
+			name: "Pop one Val from non-empty List",
 			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c")}
 				l.LPush(values...)
@@ -99,7 +99,7 @@ func TestLPop(t *testing.T) {
 			remaining: []string{},
 		},
 		{
-			name: "Pop from empty list",
+			name: "Pop from empty List",
 			setup: func(l *ListType) {
 				// No values added
 			},
@@ -142,7 +142,7 @@ func TestRPop(t *testing.T) {
 		remaining []string
 	}{
 		{
-			name: "Pop one value from non-empty list",
+			name: "Pop one Val from non-empty List",
 			setup: func(l *ListType) {
 				values := []*string{ptr("a"), ptr("b"), ptr("c")}
 				l.RPush(values...)
@@ -172,7 +172,7 @@ func TestRPop(t *testing.T) {
 			remaining: []string{},
 		},
 		{
-			name: "Pop from empty list",
+			name: "Pop from empty List",
 			setup: func(l *ListType) {
 				// No values added
 			},
@@ -288,7 +288,7 @@ func TestGetPositiveIndex(t *testing.T) {
 			expectedEnd:   0,
 		},
 		{
-			name:          "Empty list (length zero)",
+			name:          "Empty List (length zero)",
 			start:         -1,
 			end:           1,
 			length:        0,
@@ -371,7 +371,7 @@ func TestLRange(t *testing.T) {
 			expected: []string{},
 		},
 		{
-			name: "Empty list",
+			name: "Empty List",
 			setup: func(l *ListType) {
 				// No values added
 			},

@@ -32,11 +32,11 @@ func (cmd *rpushCmd) Execute(args ...string) (any, error) {
 		cmd.rds.Set(key, types.NewListType())
 	}
 
+	v, _ = cmd.rds.GetOrExpired(key)
+
 	if v.Type() != utils.ListType {
 		return nil, fmt.Errorf("type mismatch, this key is not a list, it is a %s", utils.TypeToString[v.Type()])
 	}
-
-	v, _ = cmd.rds.Get(key)
 
 	cmd.rds.Lock()
 	defer cmd.rds.Unlock()

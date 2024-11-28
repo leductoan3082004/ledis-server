@@ -36,6 +36,8 @@ func NewCommandManager(rds redis.Redis) redis.ICommandManager {
 		Register(createCommand(common_commands.NewFlushDBCmd)).
 		Register(createCommand(common_commands.NewExpireCmd)).
 		Register(createCommand(common_commands.NewTTLCmd)).
+		Register(createCommand(common_commands.NewRestoreCmd)).
+		Register(createCommand(common_commands.NewSnapshotCmd)).
 		Register(createCommand(set_command.NewSAddCmd)).
 		Register(createCommand(set_command.NewSCardCmd)).
 		Register(createCommand(set_command.NewSRemCmd)).
