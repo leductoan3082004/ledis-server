@@ -2,6 +2,7 @@
 
 ---
 - [Overview of Redis](#overview-of-redis)
+- [Installation](#installation)
 - [Which commands do we need to implement](#which-commands-do-we-need-to-implement-)
   - [String Commands](#string-commands)
   - [List Commands](#list-commands)
@@ -19,6 +20,9 @@
 - Two popular in-memory data stores are Redis and Memcached.
 - What makes Redis different from Memcached is that Redis uses a single-threaded architecture (i.e., its server runs on a single thread). This makes it easier to manage and simplifies handling concurrency, as there are no race conditions due to the single-threaded model.
 - **Redis** also support multiple nodes so make it a highly available cluster.
+
+### Installation
+- 
 
 ### Which commands do we need to implement ?
 #### String Commands:
