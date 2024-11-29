@@ -1,4 +1,4 @@
-# ledis-server
+# Ledis Server
 
 ---
 - [Overview of Redis](#overview-of-redis)
@@ -11,8 +11,13 @@
   - [Snapshot Commands](#snapshot-commands)
 - [Why Golang ?](#why-golang-)
 - [Initial Ideas](#initial-ideas)
+  - [Some first thoughts about how to maintain](#some-first-thoughts-about-maintain)
+  - [Expiration checking and strategy](#expiration-checking-and-strategy)
+  - [Snapshot edge case](#snapshot-edge-case)
+  - [Select the right strategy to implement each value data structure](#select-the-right-strategy-to-implement-each-value-data-structure)
 - [Designs](#designs)
 - [Things can be improved more](#things-can-be-improved-more)
+  - [Transaction](#transactions)
 ---
 ### Overview of Redis
 - Redis is a well-known in-memory data store that supports many features like key/value store, set, list, and many other data structures.
@@ -21,13 +26,16 @@
 - What makes Redis different from Memcached is that Redis uses a single-threaded architecture (i.e., its server runs on a single thread). This makes it easier to manage and simplifies handling concurrency, as there are no race conditions due to the single-threaded model.
 - **Redis** also support multiple nodes so make it a highly available cluster.
 
-### Installation
-- 
+### Installation of Ledis
+- Ensure that `Go` has installed on your machine, if not please refer to this [official document](https://go.dev/doc/install) to install it.
+- Run the server by run the `make run_server` command in your terminal, if `make` has not installed yet u can install it, or just simply run the server directly using `go run main.go`
+- You can run the tests as well `make test` or `go test -v ./...`.
+- The server will start on the port `6379` same as `Redis`
 
 ### Which commands do we need to implement ?
 #### String Commands:
-- SET key value: Set the string value associated with the specified key, overwriting any existing value.
-- GET key: Retrieve the string value stored at the specified key.
+- `SET key value`: Set the string value associated with the specified key, overwriting any existing value.
+- `GET key:` Retrieve the string value stored at the specified key.
 
 #### List Commands:
 A List is an ordered collection of strings, where duplicates are allowed.
@@ -63,17 +71,34 @@ A Set is an unordered collection of unique string values (duplicates are not all
 - One more reason is that, I have an improvement for this mini project that I have made not a long time before also using Golang. So I think using the same language may make these 2 projects has the consistency.
 
 ### Initial Ideas
+
+#### Some first thoughts about maintain.
 - At first, after decided to choose **Golang** as the main programming language for this project. What I need to think about is that how to implement these commands. And the **important things** to me is that: ***How can we make sure the correctness of my code and how to extend if some commands need to add more later.***
 - Yeah, so our main 2 problems here are about the **Maintenance** and **Correctness** (I will skip about performance here because this project is quite simple to monitor the performance, and I think it will faster than any kind of in-memory storage, because of its **simplification**).
 - Actually I have a thinking for the **Maintenance** like this: ***If one feature need to add to the application, if you open some files, and edit them. Then this tends to be the bad design. But if you open some files, and write more code to it, then it tends to be a good design***. This is not absolutely correct or wrong, because it is just my experiences after writing codes. So don't be harsh for this 😁.
 - So after thinking for half of a day, I have figure out some designs for this and I think it can be well maintained later on (Refer to the below sections for [Designs](#designs)).
-- And for `Data Expiration Commands`, I have several ways to implement this, e.g: We can `lazy-check` when the `key` is queried by users, and can remove it if it is expired. Or we can have some algorithm to periodically run to remove the `expiration keys`. And in this, I have implement these 2 solutions. For the first one, It is easy to understand. But the latter one, how we design algorithm. Luckily, I have read `Redis documentation` a long time ago and know that `Redis` have a probability algorithm to select a small subset of expiration keys and remove them from current memory. 
+
+#### Expiration checking and strategy
+- And for `Data Expiration Commands`, I have several ways to implement this.
+- We can `lazy-check` when the `key` is queried by users, and can remove it if it is expired. 
+- Or we can have some algorithm to periodically run to remove the `expiration keys`. 
+- And in this, I have implement these 2 solutions. For the first one, It is easy to understand. 
+- But the latter one, how we design algorithm. Luckily, I have read `Redis documentation` a long time ago and know that `Redis` have a probability algorithm to select a small subset of expiration keys and remove them from current memory. 
+
+#### Snapshot edge case
 - For `Snapshot Commands`, if we encounter a `SNAPSHOT` command, we just need to store current in-memory data to `a file`. There is a tricky case for this. Assume that we store the `data` in file name `data.rdb`, but then we call `SNAPSHOT` again, and unluckily, this time the `SNAPSHOT` failed in the middle of time when it writes to `data.rdb`, and our last snapshot for `data.rdb` will be lost and corrupted for now. So I have researched and figured out one solution like this. We will write to temporaty file called `temp_data.rdb`, and when the `write` complete, we can use the `mv temp_data.rdb data.rdb` command to make `temp_data` become the latest `snapshot` for `ledis`. Why it is correct ? because `mv` operation is atomic in most file system architecture. So our `SNAPSHOT` command is also atomic too.
+
+
+#### Select the right strategy to implement each value data structure
 - For the `Data Structure commands (String, List, Set)`. We can use a map with `key` as `String` and value can be `any`, but I will implement an interface for the `value` to make it extendable. 
 - The `List data structure` is quite easy, we can use the builtin `list.List` of `Golang`. 
 - The `Set data structure` is that we can use a map for this (to check if a key has existed or not). We can perform operations easily using map. But for easy, I will use the lib for this case.
 - The `String`, we can use builtin `string`.
+
+#### Testing
 - For the ***Correctness***. Yes we need to write tests to make sure it can be more correct.
+
+#### Keep coding
 - So that's it, I will start implementing now and will figure out any problems and fix them.
 ### Designs
 - I have designed several interfaces for this project:
@@ -314,3 +339,9 @@ func NewCommandManager(rds redis.Redis) redis.ICommandManager {
 
 
 ### Things can be improved more
+#### Transactions
+- `Redis` does not support real transaction, what it is supporting is just running a sequence of operations and ensure that no operation outside transaction can occur in the middle of transaction (it is easy because `Redis` is one thread). And if one operation fails in the middle of transaction, then it will continue execute other remain operations, without any rolling back.
+- And I have done a key-value store that supports transaction (something similar with relational database) in [this project](https://github.com/leductoan3082004/in-memory-storage-engine). But this version only supports key/value store with value is an any type.
+- It supports MVCC for a key (which may create and manage several versions).
+- Applied repeatable read. Multithreading.
+- Some basic operations that a transaction should have `BeginTransaction` `Abort` `Commit, ...`
