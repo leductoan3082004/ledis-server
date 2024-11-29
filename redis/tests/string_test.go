@@ -2,6 +2,7 @@ package tests
 
 import (
 	"github.com/stretchr/testify/assert"
+	"ledis-server/utils"
 	"testing"
 	"time"
 )
@@ -31,11 +32,11 @@ func TestStringCommands(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, 2, ttl)
 
-			// sleep 2 seconds to make it expired and get again, it will return error
+			// sleep 2 seconds to make it expired and get again, it will return error not found
 			time.Sleep(2 * time.Second)
 			ttl, err = cm.Execute("TTL", "key1")
 			assert.Error(t, err)
-			assert.Equal(t, "key key1 does not exist", err.Error())
+			assert.True(t, assert.ObjectsAreEqualValues(err, utils.ErrKeyDoesNotExist("key1")))
 		},
 	)
 

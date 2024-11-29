@@ -90,6 +90,10 @@ func (s *redis) Expire(key string, ttlInSeconds int) error {
 }
 
 func (s *redis) TTL(key string) (int, error) {
+	_, exist := s.getOrExpired(key)
+	if !exist {
+		return -1, utils.ErrKeyDoesNotExist(key)
+	}
 	ttl, exists := s.ttl[key]
 	if !exists {
 		return -1, nil
