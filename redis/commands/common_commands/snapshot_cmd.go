@@ -17,5 +17,9 @@ func (cmd *snapshotCmd) CommandName() string {
 func (cmd *snapshotCmd) Execute(args ...string) (any, error) {
 	cmd.rds.Lock()
 	defer cmd.rds.Unlock()
-	return nil, cmd.rds.MakeSnapshot()
+
+	if err := cmd.rds.MakeSnapshot(); err != nil {
+		return "Failed to make snapshot, please try again", err
+	}
+	return "Make snapshot successfully !!! 😁", nil
 }

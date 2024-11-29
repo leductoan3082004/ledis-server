@@ -17,5 +17,9 @@ func (cmd *restoreCmd) CommandName() string {
 func (cmd *restoreCmd) Execute(args ...string) (any, error) {
 	cmd.rds.Lock()
 	defer cmd.rds.Unlock()
-	return nil, cmd.rds.LoadSnapshot()
+
+	if err := cmd.rds.LoadSnapshot(); err != nil {
+		return "Failed to restore snapshot, please try again later !!!", err
+	}
+	return "Restore snapshot successfully !!! 😁", nil
 }
