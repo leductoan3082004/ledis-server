@@ -9,6 +9,9 @@
   - [Data Expiration Commands](#data-expiration-commands)
   - [Snapshot Commands](#snapshot-commands)
 - [Why Golang ?](#why-golang-)
+- [Initial Ideas](#initial-ideas)
+- [Designs](#designs)
+- [Things can be improved more](#things-can-be-improved-more)
 ---
 ### Overview of Redis
 - Redis is a well-known in-memory data store that supports many features like key/value store, set, list, and many other data structures.
@@ -48,9 +51,21 @@ A Set is an unordered collection of unique string values (duplicates are not all
 - `TTL key`: Retrieve the remaining time-to-live (TTL) of the specified key.
 
 #### Snapshot Commands:
-- `SAVE`: Create a snapshot of the current state of the database.
+- `SNAPSHOT`: Create a snapshot of the current state of the database.
 - `RESTORE`: Restore the database from the last saved snapshot.
 
 ### Why Golang ?
 - Actually, I am more familiar with Golang, I used it a lot to work with other projects.
 - One more reason is that, I have an improvement for this mini project that I have made not a long time before also using Golang. So I think using the same language may make these 2 projects has the consistency.
+
+### Initial Ideas
+- At first, after decided to choose **Golang** as the main programming language for this project. What I need to think about is that how to implement these commands. And the **important things** to me is that: ***How can we make sure the correctness of my code and how to extend if some commands need to add more later.***
+- Yeah, so our main 2 problems here are about the **Maintenance** and **Correctness** (I will skip about performance here because this project is quite simple to monitor the performance, and I think it will faster than any kind of in-memory storage, because of its **simplification**).
+- Actually I have a thinking for the **Maintenance** like this: ***If one feature need to add to the application, if you open some files, and edit them. Then this tends to be the bad design. But if you open some files, and write more code to it, then it tends to be a good design***. This is not absolutely correct or wrong, because it is just my experiences after writing codes. So don't be harsh for this 😁.
+- So after thinking for half of a day, I have figure out some designs for this and I think it can be well maintained later on (Refer to the below sections for [Designs](#designs)).
+- And for `Data Expiration Commands`, I have several ways to implement this, e.g: We can `lazy-check` when the `key` is queried by users, and can remove it if it is expired. Or we can have some algorithm to periodically run to remove the `expiration keys`. And in this, I have implement these 2 solutions. For the first one, It is easy to understand. But the latter one, how we design algorithm. Luckily, I have read `Redis documentation` a long time ago and know that `Redis` have a probability algorithm to select a small subset of expiration keys and remove them from current memory. 
+- For `Snapshot Commands`, if we encounter a `SNAPSHOT` command, we just need to store current in-memory data to `a file`. There is a tricky case for this. Assume that we store the `data` in file name `data.rdb`, but then we call `SNAPSHOT` again, and unluckily, this time the `SNAPSHOT` failed in the middle of time when it writes to `data.rdb`, and our last snapshot for `data.rdb` will be lost and corrupted for now. So I have researched and figured out one solution like this. We will write to temporaty file called `temp_data.rdb`, and when the `write` complete, we can use the `mv temp_data.rdb data.rdb` command to make `temp_data` become the latest `snapshot` for `ledis`. Why it is correct ? because `mv` operation is atomic in most file system architecture. So our `SNAPSHOT` command is also atomic too.
+- 
+### Designs
+
+### Things can be improved more
