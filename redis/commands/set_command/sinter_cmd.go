@@ -1,7 +1,6 @@
 package set_command
 
 import (
-	"fmt"
 	"github.com/scylladb/go-set/strset"
 	"ledis-server/redis"
 	"ledis-server/redis/types"
@@ -27,9 +26,7 @@ func (cmd *sInterCmd) Execute(args ...string) (any, error) {
 	items := cmd.rds.Gets(args...)
 	for _, item := range items {
 		if item.Type() != utils.SetType {
-			return nil, fmt.Errorf(
-				"type mismatch, some keys are not a set, it is a %s", utils.TypeToString[item.Type()],
-			)
+			return nil, utils.ErrTypeMismatch(utils.SetType, item.Type())
 		}
 	}
 

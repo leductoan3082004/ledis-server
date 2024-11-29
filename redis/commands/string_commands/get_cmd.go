@@ -30,6 +30,11 @@ func (cmd *getCmd) Execute(args ...string) (any, error) {
 
 	cmd.rds.RLock()
 	defer cmd.rds.RUnlock()
+
+	if item.Type() != utils.StringType {
+		return nil, utils.ErrTypeMismatch(utils.StringType, item.Type())
+	}
+
 	v := *item.Value().(*string)
 	return v, nil
 }

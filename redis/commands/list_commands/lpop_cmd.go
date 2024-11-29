@@ -1,7 +1,6 @@
 package list_commands
 
 import (
-	"fmt"
 	"ledis-server/redis"
 	"ledis-server/redis/types"
 	"ledis-server/utils"
@@ -33,7 +32,7 @@ func (cmd *lpopCmd) Execute(args ...string) (any, error) {
 	}
 
 	if v.Type() != utils.ListType {
-		return nil, fmt.Errorf("type mismatch, this key is not a list, it is a %s", utils.TypeToString[v.Type()])
+		return nil, utils.ErrTypeMismatch(utils.ListType, v.Type())
 	}
 
 	cmd.rds.Lock()

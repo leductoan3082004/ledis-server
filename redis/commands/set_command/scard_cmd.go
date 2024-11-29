@@ -1,7 +1,6 @@
 package set_command
 
 import (
-	"fmt"
 	"ledis-server/redis"
 	"ledis-server/redis/types"
 	"ledis-server/utils"
@@ -32,7 +31,7 @@ func (cmd *scardCmd) Execute(args ...string) (any, error) {
 	}
 
 	if v.Type() != utils.SetType {
-		return nil, fmt.Errorf("type mismatch, this key is not a set, it is a %s", utils.TypeToString[v.Type()])
+		return nil, utils.ErrTypeMismatch(utils.SetType, v.Type())
 	}
 
 	cmd.rds.RLock()
