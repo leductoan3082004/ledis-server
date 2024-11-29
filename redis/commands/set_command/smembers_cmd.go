@@ -24,6 +24,9 @@ func (cmd *sMembersCmd) Execute(args ...string) (any, error) {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
 
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
+
 	key := args[0]
 	v, exist := cmd.rds.GetOrExpired(key)
 
@@ -33,9 +36,6 @@ func (cmd *sMembersCmd) Execute(args ...string) (any, error) {
 	if v.Type() != utils.SetType {
 		return nil, utils.ErrTypeMismatch(utils.SetType, v.Type())
 	}
-
-	cmd.rds.Lock()
-	defer cmd.rds.Unlock()
 
 	l := v.(*types.SetType)
 	return l.SMembers(), nil

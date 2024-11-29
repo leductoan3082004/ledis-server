@@ -29,5 +29,8 @@ func (cmd *expireCmd) Execute(args ...string) (any, error) {
 		return nil, err
 	}
 
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
+
 	return nil, cmd.rds.Expire(args[0], ttlInSeconds)
 }

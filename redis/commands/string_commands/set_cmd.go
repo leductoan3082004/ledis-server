@@ -23,6 +23,9 @@ func (c *setCmd) Execute(args ...string) (any, error) {
 	if len(args) != 2 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
+	c.rds.Lock()
+	defer c.rds.Unlock()
+
 	c.rds.Set(args[0], types.NewStringType(args[1]))
 	return args[1], nil
 }

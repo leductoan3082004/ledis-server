@@ -21,6 +21,8 @@ func (cmd *delCmd) Execute(args ...string) (any, error) {
 	if len(args) != 1 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 	cmd.rds.Delete(args[0])
 	return nil, nil
 }

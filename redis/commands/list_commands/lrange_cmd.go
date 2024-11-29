@@ -24,6 +24,8 @@ func (cmd *lrangeCmd) Execute(args ...string) (any, error) {
 	if len(args) != 3 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 
 	key := args[0]
 	v, exist := cmd.rds.GetOrExpired(key)
@@ -34,9 +36,6 @@ func (cmd *lrangeCmd) Execute(args ...string) (any, error) {
 	if v.Type() != utils.ListType {
 		return nil, utils.ErrTypeMismatch(utils.ListType, v.Type())
 	}
-
-	cmd.rds.RLock()
-	defer cmd.rds.RUnlock()
 
 	start, err := strconv.Atoi(args[1])
 	if err != nil {

@@ -23,6 +23,10 @@ func (cmd *sInterCmd) Execute(args ...string) (any, error) {
 	if len(args) < 1 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
+
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
+
 	items := cmd.rds.Gets(args...)
 	for _, item := range items {
 		if item.Type() != utils.SetType {

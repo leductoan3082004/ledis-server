@@ -23,6 +23,9 @@ func (cmd *scardCmd) Execute(args ...string) (any, error) {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
 
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
+
 	key := args[0]
 	v, exist := cmd.rds.GetOrExpired(key)
 
@@ -33,9 +36,6 @@ func (cmd *scardCmd) Execute(args ...string) (any, error) {
 	if v.Type() != utils.SetType {
 		return nil, utils.ErrTypeMismatch(utils.SetType, v.Type())
 	}
-
-	cmd.rds.RLock()
-	defer cmd.rds.RUnlock()
 
 	l := v.(*types.SetType)
 

@@ -24,6 +24,9 @@ func (cmd *rpushCmd) Execute(args ...string) (any, error) {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
 
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
+
 	key := args[0]
 	v, exist := cmd.rds.GetOrExpired(key)
 
@@ -36,9 +39,6 @@ func (cmd *rpushCmd) Execute(args ...string) (any, error) {
 	if v.Type() != utils.ListType {
 		return nil, utils.ErrTypeMismatch(utils.ListType, v.Type())
 	}
-
-	cmd.rds.Lock()
-	defer cmd.rds.Unlock()
 
 	l := v.(*types.ListType)
 	for i := 1; i < len(args); i++ {

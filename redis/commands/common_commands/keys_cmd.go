@@ -17,5 +17,7 @@ func (cmd *keyCmd) CommandName() string {
 }
 
 func (cmd *keyCmd) Execute(args ...string) (any, error) {
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 	return cmd.rds.Keys(), nil
 }

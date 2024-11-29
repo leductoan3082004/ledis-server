@@ -15,5 +15,7 @@ func (cmd *restoreCmd) CommandName() string {
 }
 
 func (cmd *restoreCmd) Execute(args ...string) (any, error) {
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 	return nil, cmd.rds.LoadSnapshot()
 }

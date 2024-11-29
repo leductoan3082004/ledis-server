@@ -22,14 +22,15 @@ func (cmd *getCmd) Execute(args ...string) (any, error) {
 	if len(args) != 1 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
+
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
+
 	item, exist := cmd.rds.GetOrExpired(args[0])
 
 	if !exist {
 		return nil, nil
 	}
-
-	cmd.rds.RLock()
-	defer cmd.rds.RUnlock()
 
 	if item.Type() != utils.StringType {
 		return nil, utils.ErrTypeMismatch(utils.StringType, item.Type())

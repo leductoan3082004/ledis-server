@@ -1,8 +1,8 @@
 package common_commands
 
 import (
-	"errors"
 	"ledis-server/redis"
+	"ledis-server/utils"
 )
 
 type ttlCmd struct {
@@ -19,7 +19,9 @@ func (cmd *ttlCmd) CommandName() string {
 
 func (cmd *ttlCmd) Execute(args ...string) (any, error) {
 	if len(args) != 1 {
-		return nil, errors.New("expecting 1 arguments")
+		return nil, utils.ErrArgsLengthNotMatch
 	}
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 	return cmd.rds.TTL(args[0])
 }

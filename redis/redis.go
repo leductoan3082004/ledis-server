@@ -41,40 +41,27 @@ func (s *redis) RUnlock() {
 }
 
 func (s *redis) Set(key string, value Item) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.data[key] = value
 }
 
 func (s *redis) Get(key string) (Item, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	value, exist := s.data[key]
 	return value, exist
 }
 
 func (s *redis) GetOrExpired(key string) (Item, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	return s.getOrExpired(key)
 }
 
 func (s *redis) Delete(key string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.delete(key)
 }
 
 func (s *redis) Expired(key string) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	return s.expired(key)
 }
 
 func (s *redis) Keys() []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	keys := make([]string, 0, len(s.data))
 	for k := range s.data {
 		if !s.expired(k) {
@@ -85,17 +72,12 @@ func (s *redis) Keys() []string {
 }
 
 func (s *redis) FlushDB() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	s.data = make(map[string]Item)
 	s.expirationKey = make(map[string]time.Time)
 	s.ttl = make(map[string]time.Duration)
 }
 
 func (s *redis) Expire(key string, ttlInSeconds int) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	if item, exist := s.getOrExpired(key); !exist || item == nil {
 		return utils.ErrKeyDoesNotExist(key)
 	}
@@ -108,13 +90,6 @@ func (s *redis) Expire(key string, ttlInSeconds int) error {
 }
 
 func (s *redis) TTL(key string) (int, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	if item, exist := s.getOrExpired(key); !exist || item == nil {
-		return -1, utils.ErrKeyDoesNotExist(key)
-	}
-
 	ttl, exists := s.ttl[key]
 	if !exists {
 		return -1, nil
@@ -123,9 +98,6 @@ func (s *redis) TTL(key string) (int, error) {
 }
 
 func (s *redis) Gets(keys ...string) []Item {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	items := make([]Item, 0, len(keys))
 	for _, key := range keys {
 		item, exists := s.getOrExpired(key)
@@ -138,9 +110,6 @@ func (s *redis) Gets(keys ...string) []Item {
 }
 
 func (s *redis) MakeSnapshot() error {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	tempFileName := "snapshot_temp.rdb"
 	finalFileName := "snapshot.rdb"
 
@@ -178,9 +147,6 @@ func (s *redis) MakeSnapshot() error {
 }
 
 func (s *redis) LoadSnapshot() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	file, err := os.Open("snapshot.rdb")
 	if err != nil {
 		return err

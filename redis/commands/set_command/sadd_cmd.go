@@ -24,6 +24,9 @@ func (cmd *saddCmd) Execute(args ...string) (any, error) {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
 
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
+
 	key := args[0]
 	v, exist := cmd.rds.GetOrExpired(key)
 
@@ -37,9 +40,6 @@ func (cmd *saddCmd) Execute(args ...string) (any, error) {
 	}
 
 	v, _ = cmd.rds.Get(key)
-
-	cmd.rds.Lock()
-	defer cmd.rds.Unlock()
 
 	l := v.(*types.SetType)
 

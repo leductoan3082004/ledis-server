@@ -15,6 +15,8 @@ func (cmd *flushDBCmd) CommandName() string {
 }
 
 func (cmd *flushDBCmd) Execute(args ...string) (any, error) {
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 	cmd.rds.FlushDB()
 	return nil, nil
 }

@@ -23,6 +23,8 @@ func (cmd *llenCmd) Execute(args ...string) (any, error) {
 	if len(args) != 1 {
 		return nil, utils.ErrArgsLengthNotMatch
 	}
+	cmd.rds.Lock()
+	defer cmd.rds.Unlock()
 
 	key := args[0]
 	v, exist := cmd.rds.GetOrExpired(key)
@@ -33,9 +35,6 @@ func (cmd *llenCmd) Execute(args ...string) (any, error) {
 	if v.Type() != utils.ListType {
 		return nil, utils.ErrTypeMismatch(utils.ListType, v.Type())
 	}
-
-	cmd.rds.RLock()
-	defer cmd.rds.RUnlock()
 
 	l := v.(*types.ListType)
 	return l.LLen(), nil
