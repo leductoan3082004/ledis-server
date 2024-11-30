@@ -1,0 +1,23 @@
+name: 'CI'
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Test build successfully
+    runs-on: ubuntu-latest
+    steps:
+      - name: build
+        run: |
+          make build
+
+  test:
+    name: Check all tests run successfully
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: |
+          make test
