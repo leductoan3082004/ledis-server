@@ -3,8 +3,11 @@ package redis
 import (
 	"encoding/gob"
 	"github.com/sasha-s/go-deadlock"
+	"ledis-server/logging"
 	"ledis-server/utils"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -12,6 +15,9 @@ type redis struct {
 	data          map[string]Item
 	expirationKey map[string]time.Time
 	mu            *deadlock.RWMutex
+	signalChan    chan os.Signal
+	done          chan struct{}
+	stopped       bool
 }
 
 func NewRedis() *redis {
@@ -19,20 +25,43 @@ func NewRedis() *redis {
 		data:          make(map[string]Item),
 		expirationKey: make(map[string]time.Time),
 		mu:            new(deadlock.RWMutex),
+		signalChan:    make(chan os.Signal, 1),
+		done:          make(chan struct{}),
 	}
-	go rds.expireKeysPeriodically()
+
+	rds.expireKeysPeriodically()
+	signal.Notify(rds.signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		select {
+		case <-rds.signalChan:
+			logging.GetLogger().Info("Received termination signal. Shutting down...")
+			close(rds.done)
+			rds.Stop()
+		}
+	}()
+
 	return rds
 }
 
 func (s *redis) expireKeysPeriodically() {
-	for {
-		s.mu.Lock()
-		for key := range s.expirationKey {
-			s.getOrExpired(key)
+	ticker := time.NewTicker(time.Second * 5)
+	go func() {
+		for {
+			select {
+			case <-s.done:
+				logging.GetLogger().Info("ExpirationKeysPeriodically gracefully exit")
+				return
+
+			case <-ticker.C:
+				s.mu.Lock()
+				for key := range s.expirationKey {
+					s.getOrExpired(key)
+				}
+				s.mu.Unlock()
+			}
 		}
-		s.mu.Unlock()
-		time.Sleep(5 * time.Second)
-	}
+	}()
 
 }
 
@@ -181,6 +210,19 @@ func (s *redis) LoadSnapshot() error {
 
 	s.data = snapshot.Data
 	s.expirationKey = snapshot.ExpirationKey
+
+	return nil
+}
+
+func (s *redis) Stop() error {
+	<-s.done
+
+	s.mu.Lock()
+	s.stopped = true
+	s.mu.Unlock()
+
+	logging.GetLogger().Info("Shutting down...")
+	logging.GetLogger().Info("Shutdown Redis successfully")
 
 	return nil
 }
