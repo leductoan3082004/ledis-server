@@ -10,6 +10,9 @@ jobs:
     name: Test build successfully
     runs-on: ubuntu-latest
     steps:
+      - name: checkout the repo
+        uses: actions/checkout@v2
+
       - name: build
         run: |
           make build
@@ -18,6 +21,9 @@ jobs:
     name: Check all tests run successfully
     runs-on: ubuntu-latest
     steps:
+      - name: checkout the repo
+        uses: actions/checkout@v2
+
       - name: test
         run: |
           make test
