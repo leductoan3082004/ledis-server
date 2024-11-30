@@ -125,16 +125,18 @@ func TestEXPIREandTTL(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test EXPIRE (set TTL of 1 second)
-	_, err = cm.Execute("EXPIRE", "list1", "1")
+	_, err = cm.Execute("EXPIRE", "list1", "2")
 	assert.NoError(t, err)
 
+	// sleep 100ms to make the ttl round down to 1
+	time.Sleep(time.Millisecond * 100)
 	// Test TTL (should return 1)
 	ttlResp, err := cm.Execute("TTL", "list1")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, ttlResp)
 
-	// Wait for expiration and check TTL again
-	time.Sleep(2 * time.Second)
+	// Wait for remaining time and check TTL again
+	time.Sleep(1900 * time.Millisecond)
 
 	ttlResp, err = cm.Execute("TTL", "list1")
 	assert.ObjectsAreEqualValues(err, utils.ErrKeyDoesNotExist("list1"))

@@ -26,7 +26,7 @@
 - What makes Redis different from Memcached is that Redis uses a single-threaded architecture (i.e., its server runs on a single thread). This makes it easier to manage and simplifies handling concurrency, as there are no race conditions due to the single-threaded model.
 - **Redis** also support multiple nodes so make it a highly available cluster.
 
-### Installation of Ledis
+### Installation
 - Ensure that `Go` has installed on your machine, if not please refer to this [official document](https://go.dev/doc/install) to install it.
 - Run the server by run the `make run_server` command in your terminal, if `make` has not installed yet u can install it, or just simply run the server directly using `go run main.go`
 - You can run the tests as well `make test` or `go test -v ./...`.
@@ -44,7 +44,7 @@ A List is an ordered collection of strings, where duplicates are allowed.
 - `RPUSH key value1 [value2...]`: Append one or more values to the list. If the list doesn't exist, it is created. Returns the length of the list after the operation.
 - `LPOP key`: Remove and return the first item from the list stored at the specified key.
 - `RPOP key`: Remove and return the last item from the list stored at the specified key.
-- `LRANGE key` start stop: Return a range of elements from the list, inclusive of the start and stop indices. Both start and stop are zero-based non-negative integers.
+- `LRANGE key start stop`: Return a range of elements from the list, inclusive of the start and stop indices. Both start and stop are zero-based non-negative integers.
 
 #### Set Commands:
 A Set is an unordered collection of unique string values (duplicates are not allowed).
@@ -83,8 +83,15 @@ A Set is an unordered collection of unique string values (duplicates are not all
 - We can `lazy-check` when the `key` is queried by users, and can remove it if it is expired. 
 - Or we can have some algorithm to periodically run to remove the `expiration keys`. 
 - And in this, I have implement these 2 solutions. For the first one, It is easy to understand. 
-- But the latter one, how we design algorithm. Luckily, I have read `Redis documentation` a long time ago and know that `Redis` have a probability algorithm to select a small subset of expiration keys and remove them from current memory. 
-
+- The latter one, I have several options:
+  - Periodically run another thread to clean up the expiration keys. But the drawback is it will lock the current thread for a long time. Time complexity will be `O(N) for N is number of keys`. But it will work well if **large portion** of keys expire likely at the same time.
+  - Maintain a `sorted set` (Balanced Binary Tree underlying) of all the `(expirationTime, key)` in `increasing orders`. Everytime we have a `new key with TTL set`, we can put it in this `sorted set`. And periodically we can get the smallest `expirationTime` out of the set in `O(logN) with N is the number of current keys in the set`. So it will reduce time complexity to `O(M * log(N)) with M is the number of expired keys, but it can go up to O(N * log(N)) if all the keys are expired`. But overall this solution may work well if we have **small portion** of expiration keys at the same time.
+  - `Redis` has the random algorithm to select a small portion of keys and check to expire them. But currently what I am using is a map, so it's hard to select random keys from the map (can only iterate through, but this will not a random solution). 
+    - I have think storing those keys in list, so we can select random indexes and expire them. But it may not work well because remove the keys from the list cost `O(N)` which we can achieve by an easier solution by iterating through the map.
+    - Using a `SortedSet` is not a good idea, because we can know exactly which keys will expire, so we do not need to pick randomly here.
+    - Using the `LinkList` here will solve the problem of removing element, but will be hard to get a specific key at one given index (have to iterate through), so it is still `O(N)` overall. 
+    - There is one another data structure that store the `keys` along with `expiration time`, and we can remove one `key` in `O(key length)`, and we can **walk** through the children nodes (we can compute the probability of each children nodes that we will walk down). Total approximate complexity is `O(number of size * average length of keys)`
+  - Above 4 solutions have either advantages and disadvantages and trade-off between time complexity and maybe memory complexity, and we should choose the one that matches application needs. But for easier in this application, I will choose the first one.
 #### Snapshot edge case
 - For `Snapshot Commands`, if we encounter a `SNAPSHOT` command, we just need to store current in-memory data to `a file`. There is a tricky case for this. Assume that we store the `data` in file name `data.rdb`, but then we call `SNAPSHOT` again, and unluckily, this time the `SNAPSHOT` failed in the middle of time when it writes to `data.rdb`, and our last snapshot for `data.rdb` will be lost and corrupted for now. So I have researched and figured out one solution like this. We will write to temporaty file called `temp_data.rdb`, and when the `write` complete, we can use the `mv temp_data.rdb data.rdb` command to make `temp_data` become the latest `snapshot` for `ledis`. Why it is correct ? because `mv` operation is atomic in most file system architecture. So our `SNAPSHOT` command is also atomic too.
 

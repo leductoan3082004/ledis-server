@@ -11,7 +11,7 @@ type Redis interface {
 	RLock()
 	RUnlock()
 
-	// Set key equal to value
+	// Set key equal to Val
 	Set(key string, value Item)
 
 	// Get just get but not check expiration

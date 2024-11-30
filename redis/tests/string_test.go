@@ -27,10 +27,12 @@ func TestStringCommands(t *testing.T) {
 			_, err = cm.Execute("EXPIRE", "key1", "2")
 			assert.NoError(t, err)
 
-			// now get again the ttl, this will be 2
+			time.Sleep(time.Millisecond * 10)
+
+			// now get again the ttl, this will be 1 (round down)
 			ttl, err = cm.Execute("TTL", "key1")
 			assert.NoError(t, err)
-			assert.Equal(t, 2, ttl)
+			assert.Equal(t, 1, ttl)
 
 			// sleep 2 seconds to make it expired and get again, it will return error not found
 			time.Sleep(2 * time.Second)

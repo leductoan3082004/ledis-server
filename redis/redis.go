@@ -11,17 +11,29 @@ import (
 type redis struct {
 	data          map[string]Item
 	expirationKey map[string]time.Time
-	ttl           map[string]time.Duration
 	mu            *deadlock.RWMutex
 }
 
 func NewRedis() *redis {
-	return &redis{
+	rds := &redis{
 		data:          make(map[string]Item),
 		expirationKey: make(map[string]time.Time),
-		ttl:           make(map[string]time.Duration),
 		mu:            new(deadlock.RWMutex),
 	}
+	go rds.expireKeysPeriodically()
+	return rds
+}
+
+func (s *redis) expireKeysPeriodically() {
+	for {
+		s.mu.Lock()
+		for key := range s.expirationKey {
+			s.getOrExpired(key)
+		}
+		s.mu.Unlock()
+		time.Sleep(5 * time.Second)
+	}
+
 }
 
 func (s *redis) Lock() {
@@ -74,7 +86,6 @@ func (s *redis) Keys() []string {
 func (s *redis) FlushDB() {
 	s.data = make(map[string]Item)
 	s.expirationKey = make(map[string]time.Time)
-	s.ttl = make(map[string]time.Duration)
 }
 
 func (s *redis) Expire(key string, ttlInSeconds int) error {
@@ -84,7 +95,6 @@ func (s *redis) Expire(key string, ttlInSeconds int) error {
 
 	ttl := time.Duration(ttlInSeconds) * time.Second
 	s.expirationKey[key] = time.Now().Add(ttl)
-	s.ttl[key] = ttl
 
 	return nil
 }
@@ -94,10 +104,11 @@ func (s *redis) TTL(key string) (int, error) {
 	if !exist {
 		return -1, utils.ErrKeyDoesNotExist(key)
 	}
-	ttl, exists := s.ttl[key]
+	expirationTime, exists := s.expirationKey[key]
 	if !exists {
 		return -1, nil
 	}
+	ttl := expirationTime.Sub(time.Now())
 	return int(ttl / 1e9), nil
 }
 
@@ -124,7 +135,6 @@ func (s *redis) MakeSnapshot() error {
 	}{
 		Data:          s.data,
 		ExpirationKey: s.expirationKey,
-		TTL:           s.ttl,
 	}
 
 	file, err := os.Create(tempFileName)
@@ -171,7 +181,6 @@ func (s *redis) LoadSnapshot() error {
 
 	s.data = snapshot.Data
 	s.expirationKey = snapshot.ExpirationKey
-	s.ttl = snapshot.TTL
 
 	return nil
 }
@@ -192,7 +201,6 @@ func (s *redis) keyHasExpired(key string) bool {
 func (s *redis) delete(key string) {
 	delete(s.data, key)
 	delete(s.expirationKey, key)
-	delete(s.ttl, key)
 }
 
 func (s *redis) getOrExpired(key string) (Item, bool) {
