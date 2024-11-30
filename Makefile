@@ -2,7 +2,10 @@ GO = go
 GO_FMT = gofmt
 BINARY_NAME = server
 
-run_server:
+install:
+	$(GO) mod tidy
+
+run_server: install
 	$(GO) run main.go
 
 format:
@@ -11,5 +14,8 @@ format:
 test:
 	$(GO) test -v ./...
 
-build:
+build: install
 	$(GO) build -o $(BINARY_NAME)
+
+clean:
+	rm -f $(BINARY_NAME)
