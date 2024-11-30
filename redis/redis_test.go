@@ -140,20 +140,6 @@ func TestRedis_ExpiredKey(t *testing.T) {
 	assert.True(t, redis.Expired("key11"), "The key should be expired after the TTL")
 }
 
-func TestRedis_ConcurrencyLock(t *testing.T) {
-	redis := NewRedis()
-
-	redis.Lock()
-
-	go func() {
-		redis.RLock()
-		redis.RUnlock()
-	}()
-	time.Sleep(1 * time.Second)
-
-	redis.Unlock()
-}
-
 func TestRedis_GetOrExpired(t *testing.T) {
 	redis := NewRedis()
 
@@ -166,4 +152,20 @@ func TestRedis_GetOrExpired(t *testing.T) {
 	retrievedItem, exists := redis.GetOrExpired("key12")
 	assert.False(t, exists, "The key should have expired and should not be retrieved")
 	assert.Nil(t, retrievedItem, "The retrieved item should be nil")
+}
+
+func TestRedis_ExpirePeriodically(t *testing.T) {
+	redis := NewRedis()
+	item := &MockItem{Val: "test Val", Typ: 1}
+	redis.Set("key13", item)
+	redis.Expire("key13", 1)
+
+	// sleep 6 seconds to make sure active expiration can run
+	time.Sleep(6 * time.Second)
+
+	redis.mu.Lock()
+	_, exist := redis.data["key13"]
+	redis.mu.Unlock()
+
+	assert.False(t, exist, "The key should have expired and should not be retrieved")
 }
