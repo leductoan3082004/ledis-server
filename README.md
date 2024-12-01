@@ -18,6 +18,7 @@
 - [Designs](#designs)
 - [Things can be improved more](#things-can-be-improved-more)
   - [Transaction](#transactions)
+  - [Snapshot](#snapshot)
 ---
 ### Overview of Redis
 - Redis is a well-known in-memory data store that supports many features like key/value store, set, list, and many other data structures.
@@ -352,3 +353,11 @@ func NewCommandManager(rds redis.Redis) redis.ICommandManager {
 - It supports MVCC for a key (which may create and manage several versions).
 - Applied repeatable read. Multithreading.
 - Some basic operations that a transaction should have `BeginTransaction` `Abort` `Commit, ...`
+
+#### Snapshot
+- Although I just stored all the data on memory into the disk, and it's quick and easy to store.
+- But if we develop more, we need to think about maybe our data structure will change a lot, and the last snapshot we stored may not fit with the new implementation.
+- So we can develop a new strategy to store it. Maybe we will not store the whole memory into disk. Instead we will store all the users' events into one file (maybe several files to prevent loading for so long). With this event file, we can easily recover our snapshot from scratch right ? just go through from beginning of the file and to the end, apply all the events into memory. And bump, we have our snapshot recovered.
+- But the main disadvantage of this is that it will take us so long to recover right ?
+- To fix this, we may catch the snapshot at some points of time, and we can just apply our events from that point of time after. So it's much quicker.
+- And in our code. We may handle Backward compatibility to make our application wont crash when apply the events.
